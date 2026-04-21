@@ -23,7 +23,12 @@ public class SomeController {
     private static final String TARGET_FOLDER = "img/";
 
 //    @CrossOrigin(origins = "http://localhost:5173")
-    @CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "http://192.168.43.252:5173"})
+    @CrossOrigin(origins = {
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://192.168.43.252:5173",
+            "https://number-recognition-system.vercel.app"
+    })
     @PostMapping("/upload")
     public ResponseEntity<?> uploadImage(@RequestParam("image") MultipartFile imageFile, HttpSession session) throws InterruptedException {
 
