@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型参数调整界面</title>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/vue.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f8f8;
+        }
+        #app {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .parameter-group {
+            display: flex;
+            justify-content: space-between;
+        }
+        .parameter-group div {
+            width: 45%;
+        }
+        .parameter-item {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .button-group {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            width: 100%;
+            background-color: #9E9E9E;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-train {
+            background-color: #2196F3;
+        }
+        .btn-view-results {
+            background-color: #4CAF50;
+        }
+        .btn-back {
+            background-color: black;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            width: 420px;
+            text-align: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 16px;
+            background-color: #e0e0e0;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #2196F3;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .progress-detail {
+            color: #555;
+            font-size: 14px;
+            margin: 8px 0 0;
+        }
+        .training-log {
+            width: 100%;
+            height: 160px;
+            margin-top: 12px;
+            resize: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .btn-cancel {
+            background-color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>模型参数调整训练界面</h2>
+    <div class="parameter-group">
+        <div>
+            <div class="parameter-item">
+                <label for="batchSize">batch size:</label>
+                <input type="text" v-model="parameters.batchSize" id="batchSize" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="learningRate">learning rate:</label>
+                <input type="text" v-model="parameters.learningRate" id="learningRate" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="momentum">momentum:</label>
+                <input type="text" v-model="parameters.momentum" id="momentum" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="epochs">EPOCH:</label>
+                <input type="text" v-model="parameters.epochs" id="epochs" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="saveModel">save model:</label>
+                <input type="text" v-model="parameters.saveModel" id="saveModel" placeholder="请输入值">
+            </div>
+        </div>
+
+        <div>
+            <div class="parameter-item">
+                <label for="stride">stride:</label>
+                <input type="text" v-model="parameters.stride" id="stride" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="padding">padding:</label>
+                <input type="text" v-model="parameters.padding" id="padding" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="kernelSize">kernel size:</label>
+                <input type="text" v-model="parameters.kernelSize" id="kernelSize" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="outChannel">out channel:</label>
+                <input type="text" v-model="parameters.outChannel" id="outChannel" placeholder="请输入值">
+            </div>
+            <div class="parameter-item">
+                <label for="inChannel">in channel:</label>
+                <input type="text" v-model="parameters.inChannel" id="inChannel" placeholder="请输入值">
+            </div>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button class="btn-train" @click="trainModel">训练模型</button>
+        <button class="btn-view-results" @click="viewResults">查看结果</button>
+        <button class="btn-back" @click="goToHome">返回主页</button>
+    </div>
+
+    <div class="modal" :class="{ show: showModal }">
+        <div class="modal-content">
+            <p>{{ modalMessage }}</p>
+
+            <div v-if="showProgress">
+                <div class="progress-text">{{ trainingProgress.toFixed(1) }}%</div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" :style="{ width: trainingProgress + '%' }"></div>
+                </div>
+                <p class="progress-detail" v-if="progressDetail">{{ progressDetail }}</p>
+                <textarea class="training-log" :value="trainingOutputPreview" readonly title="训练实时日志"></textarea>
+            </div>
+
+            <button v-if="isTraining" class="btn-cancel" @click="cancelTraining">取消训练</button>
+            <button v-else @click="closeModal">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    axios.defaults.withCredentials = true;
+
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                parameters: {
+                    batchSize: '32',
+                    learningRate: '10',
+                    momentum: '90',
+                    epochs: '1',
+                    saveModel: 'modelsimple.pth',
+                    stride: '1',
+                    padding: '1',
+                    kernelSize: '3',
+                    outChannel: '32',
+                    inChannel: '1',
+                    flag: 'train'
+                },
+                showModal: false,
+                modalMessage: '开始训练...',
+                trainingJobId: '',
+                trainingProgress: 0,
+                progressDetail: '',
+                trainingOutput: '',
+                isTraining: false,
+                pollTimer: null
+            };
+        },
+        computed: {
+            showProgress() {
+                return this.isTraining || this.trainingProgress > 0 || this.trainingOutput.length > 0;
+            },
+            trainingOutputPreview() {
+                const lines = this.trainingOutput.trim().split('\n').filter(Boolean);
+                return lines.slice(-18).join('\n');
+            }
+        },
+        created() {
+            const cachedJobId = sessionStorage.getItem('trainingJobId');
+            const cachedParams = sessionStorage.getItem('trainingParams');
+            if (cachedJobId && cachedParams) {
+                try {
+                    this.parameters = JSON.parse(cachedParams);
+                    this.trainingJobId = cachedJobId;
+                    this.isTraining = true;
+                    this.showModal = true;
+                    this.modalMessage = '正在恢复训练进度...';
+                    this.startPolling();
+                } catch (error) {
+                    sessionStorage.removeItem('trainingJobId');
+                    sessionStorage.removeItem('trainingParams');
+                }
+            }
+        },
+        methods: {
+            trainModel() {
+                if (this.isTraining) {
+                    return;
+                }
+
+                this.showModal = true;
+                this.modalMessage = '正在保存训练配置...';
+                this.trainingProgress = 0;
+                this.progressDetail = '';
+                this.trainingOutput = '';
+
+                const parameters = Object.assign({}, this.parameters);
+
+                axios.post('http://localhost:8080/api/training/saveConfig', parameters)
+                    .then(response => {
+                        if (!String(response.data).includes('成功')) {
+                            throw new Error(response.data);
+                        }
+                        this.modalMessage = '正在启动训练任务...';
+                        sessionStorage.setItem('trainingParams', JSON.stringify(parameters));
+                        return axios.post('http://localhost:8080/api/training/start', parameters);
+                    })
+                    .then(response => {
+                        this.trainingJobId = response.data.jobId;
+                        sessionStorage.setItem('trainingJobId', this.trainingJobId);
+                        this.isTraining = true;
+                        this.modalMessage = '训练进行中...';
+                        this.startPolling();
+                    })
+                    .catch(error => {
+                        console.error('启动训练时出错:', error);
+                        this.isTraining = false;
+                        this.modalMessage = this.extractErrorMessage(error, '训练启动失败');
+                    });
+            },
+            startPolling() {
+                this.stopPolling();
+                this.fetchTrainingStatus();
+                this.pollTimer = setInterval(() => {
+                    this.fetchTrainingStatus();
+                }, 1500);
+            },
+            stopPolling() {
+                if (this.pollTimer) {
+                    clearInterval(this.pollTimer);
+                    this.pollTimer = null;
+                }
+            },
+            fetchTrainingStatus() {
+                if (!this.trainingJobId) {
+                    return;
+                }
+
+                axios.get('http://localhost:8080/api/training/status', {
+                    params: {
+                        jobId: this.trainingJobId
+                    }
+                }).then(response => {
+                    const data = response.data;
+                    this.trainingProgress = Number(data.progressPercent || 0);
+                    this.progressDetail = data.message || '';
+                    this.trainingOutput = [data.output || '', data.errorOutput || ''].filter(Boolean).join('\n');
+
+                    if (data.status === 'COMPLETED') {
+                        this.isTraining = false;
+                        this.stopPolling();
+                        this.modalMessage = '训练完成，正在跳转结果页...';
+                        sessionStorage.setItem('trainingResult', data.output || '');
+                        sessionStorage.removeItem('trainingJobId');
+
+                        const query = new URLSearchParams(this.parameters).toString();
+                        setTimeout(() => {
+                            window.location.href = `results.html?${query}`;
+                        }, 500);
+                    } else if (data.status === 'FAILED') {
+                        this.isTraining = false;
+                        this.stopPolling();
+                        this.modalMessage = data.message || '训练失败';
+                        sessionStorage.removeItem('trainingJobId');
+                    } else if (data.status === 'CANCELLED') {
+                        this.isTraining = false;
+                        this.stopPolling();
+                        this.modalMessage = data.message || '训练已取消';
+                        this.trainingProgress = 0;
+                        sessionStorage.removeItem('trainingJobId');
+                    } else {
+                        this.modalMessage = data.status === 'CANCELLING' ? '正在取消训练...' : '训练进行中...';
+                    }
+                }).catch(error => {
+                    console.error('获取训练状态失败:', error);
+                    this.isTraining = false;
+                    this.stopPolling();
+                    this.modalMessage = this.extractErrorMessage(error, '获取训练状态失败');
+                    sessionStorage.removeItem('trainingJobId');
+                });
+            },
+            cancelTraining() {
+                if (!this.trainingJobId) {
+                    return;
+                }
+
+                this.modalMessage = '正在取消训练...';
+                axios.post('http://localhost:8080/api/training/cancel', null, {
+                    params: {
+                        jobId: this.trainingJobId
+                    }
+                }).catch(error => {
+                    console.error('取消训练失败:', error);
+                    this.modalMessage = this.extractErrorMessage(error, '取消训练失败');
+                });
+            },
+            viewResults() {
+                const query = new URLSearchParams(this.parameters).toString();
+                window.location.href = `results.html?${query}`;
+            },
+            goToHome() {
+                window.location.href = 'dashboard.html';
+            },
+            closeModal() {
+                if (this.isTraining) {
+                    return;
+                }
+                this.showModal = false;
+            },
+            extractErrorMessage(error, fallback) {
+                if (error && error.response && error.response.data) {
+                    if (typeof error.response.data === 'string') {
+                        return error.response.data;
+                    }
+                    if (error.response.data.message) {
+                        return error.response.data.message;
+                    }
+                    if (error.response.data.error) {
+                        return error.response.data.error;
+                    }
+                }
+                if (error && error.message) {
+                    return error.message;
+                }
+                return fallback;
+            }
+        },
+        beforeDestroy() {
+            this.stopPolling();
+        }
+    });
+</script>
+</body>
+</html>

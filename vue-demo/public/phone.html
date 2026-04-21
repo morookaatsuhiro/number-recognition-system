@@ -1,0 +1,282 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手写数字识别系统</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #app {
+            text-align: center;
+            max-width: 300px;
+        }
+        canvas {
+            border: 1px solid #000;
+            width: 100%;
+            height: 200px;
+            background-color: #fff;
+        }
+        button {
+            margin: 10px 5px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-clear { background-color: #ff4d4d; color: white; }
+        .btn-upload { background-color: #4CAF50; color: white; }
+        .btn-refresh { background-color: #9E9E9E; color: white; }
+        input[type="file"] {
+            display: block;
+            margin: 10px auto;
+        }
+        .result-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 400px;
+        }
+        .result-label {
+            position: absolute;
+            top: -20px;
+            left: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .result-textarea {
+            margin-top: 20px;
+            color: green;
+            font-weight: bold;
+            resize: none;
+            width: 100%;
+            height: 150px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>手写数字识别系统</h2>
+
+    <!-- 手写画布 -->
+    <canvas ref="canvas" @mousedown="startDrawing" @mousemove="draw" @mouseup="stopDrawing"
+            @touchstart="startDrawing" @touchmove="draw" @touchend="stopDrawing"></canvas>
+
+    <!-- 操作按钮 -->
+    <button class="btn-clear" @click="clearCanvas">清除画布</button>
+
+    <!-- 文件上传 -->
+    <input type="file" ref="fileInput" @change="handleFileUpload" title="选择要识别的图片文件" />
+
+    <!-- 统一的识别按钮 -->
+    <button class="btn-upload" @click="processImage">识别图片</button>
+
+    <!-- 刷新按钮 -->
+    <button class="btn-refresh" @click="refreshPage">刷新页面</button>
+    <br>
+    <br>
+
+
+
+
+
+    <!-- 识别结果展示框的标题 -->
+    <div class="result-container">
+        <label for="result-box" class="result-label">
+            识别结果
+        </label>
+        <!-- 放大后的识别结果展示框 -->
+        <textarea id="result-box" rows="6" cols="40" readonly class="result-textarea"></textarea>
+    </div>
+
+
+
+
+</div>
+
+<script>
+    axios.defaults.withCredentials = true;
+
+
+
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                isDrawing: false,
+                context: null,
+                fileImageData: null // 用于存储上传文件的图像数据
+            };
+        },
+        mounted() {
+            const canvas = this.$refs.canvas;
+            this.context = canvas.getContext('2d');
+
+
+
+
+            // 将画布背景设为白色
+            this.context.fillStyle = "#FFFFFF";
+            this.context.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 设置笔迹颜色为黑色
+            this.context.strokeStyle = "#000000";
+            this.context.lineWidth = 15; // 可调整线条粗细
+
+
+
+
+        },
+        methods: {
+            // 开始画画
+            startDrawing(event) {
+                event.preventDefault();
+                this.isDrawing = true;
+                const { x, y } = this.getTouchPos(event);
+                this.context.beginPath();
+                this.context.moveTo(x, y);
+            },
+            // 在画布上绘制
+            draw(event) {
+                if (!this.isDrawing) return;
+                event.preventDefault();
+                const { x, y } = this.getTouchPos(event);
+                this.context.lineTo(x, y);
+                this.context.stroke();
+            },
+            // 停止绘制
+            stopDrawing(event) {
+                event.preventDefault();
+                this.isDrawing = false;
+            },
+            // 获取触摸或鼠标位置
+            getTouchPos(event) {
+                if (event.touches && event.touches[0]) {
+                    return {
+                        x: event.touches[0].clientX - this.$refs.canvas.getBoundingClientRect().left,
+                        y: event.touches[0].clientY - this.$refs.canvas.getBoundingClientRect().top
+                    };
+                } else {
+                    return {
+                        x: event.offsetX,
+                        y: event.offsetY
+                    };
+                }
+            },
+            // 清除画布
+            clearCanvas() {
+                // 保持白色背景
+                this.context.fillStyle = "#FFFFFF";
+                this.context.fillRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
+
+                // 设置笔迹颜色为黑色
+                this.context.strokeStyle = "#000000";
+                this.context.lineWidth = 15;
+                // this.context.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
+            },
+
+
+
+
+
+
+            // 文件上传处理
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.fileImageData = file;  // 直接保存文件对象，不再转换为DataURL
+                }
+
+            },
+            // 处理图片识别
+            processImage() {
+                const formData = new FormData();
+                if (this.fileImageData instanceof File) {
+                    // 如果 fileImageData 是一个 File 对象，直接使用
+                    formData.append('image', this.fileImageData);
+                    this.uploadImageToServer(formData);
+                } else {
+
+                    // 将画布内容转换为白底黑字图片并上传
+                    this.$refs.canvas.toBlob(blob => {
+                        const file = new File([blob], "canvas.png", { type: "image/png" });
+                        formData.append('image', file);
+                        this.uploadImageToServer(formData);
+                    }, "image/png");
+
+                }
+            },
+
+
+
+
+
+            uploadImageToServer(formData) {
+                // axios.post('http://localhost:8080/upload', formData)
+                axios.post('http://localhost:8080/upload', formData)
+                    .then(response => {
+                        const { imageUrl, resultText } = response.data;
+
+                        // 更新识别结果文本框
+                        document.getElementById('result-box').value = `识别结果：\n${resultText}`;
+
+                        // 显示图片
+                        this.displayImage(`http://localhost:8080${imageUrl}`);
+                    })
+                    .catch(error => {
+                        console.error("上传图片出错:", error);
+                        document.getElementById('result-box').value = "识别失败，请重试";
+                    });
+            },
+
+            displayImage(imageUrl) {
+                let existingImg = document.getElementById('result-image');
+                if (!existingImg) {
+                    existingImg = document.createElement('img');
+                    existingImg.id = 'result-image';
+                    existingImg.style.width = '100%';
+                    existingImg.style.height = 'auto';
+                    document.getElementById('app').appendChild(existingImg);
+                }
+                existingImg.src = imageUrl;
+            },
+
+
+
+
+
+
+
+
+
+            // 刷新页面，将所有内容重置
+            refreshPage() {
+                this.clearCanvas(); // 清除画布
+                this.$refs.fileInput.value = ''; // 清除文件输入
+                this.fileImageData = null; // 重置文件图像数据
+                this.isDrawing = false; // 重置绘图状态
+                document.getElementById('result-box').value = "";  // 清空结果框内容
+                // 移除显示的识别结果图片
+                const resultImage = document.getElementById("result-image");
+                if (resultImage) {
+                    resultImage.src = ''; // 清空图片的src防止缓存
+                    resultImage.remove();
+                }
+
+
+            }
+        }
+    });
+</script>
+</body>
+</html>

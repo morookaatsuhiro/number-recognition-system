@@ -1,0 +1,35 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# Root temp files
+cookies-a.txt
+cookies-b.txt
+
+# Frontend
+vue-demo/node_modules/
+vue-demo/dist/
+vue-demo/dist-ssr/
+vue-demo/coverage/
+vue-demo/.vite/
+
+# Backend build output
+demo-app/target/
+demo-app/build/
+
+# Python / training artifacts
+# 这些目录是运行时生成内容，不直接提交到 GitHub。
+# 如果要长期保存模型或示例图片，请复制到 repo-assets/ 并用 Git LFS 提交。
+demo-app/__pycache__/
+demo-app/**/*.pyc
+demo-app/data/
+demo-app/model/
+demo-app/img/
+demo-app/image/
+
+# Local env files
+.env
+.env.*

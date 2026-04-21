@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>训练结果界面</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f8f8;
+        }
+        #app {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        ul {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            margin: 8px 0;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .result-box {
+            margin-top: 20px;
+            text-align: left;
+        }
+        textarea {
+            width: 95%;
+            height: 120px;
+            resize: none;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .plot-container {
+            text-align: center;
+        }
+        .plot-image {
+            display: block;
+            margin: 0 auto;
+            width: 50%;
+            max-width: 400px;
+            height: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .parameter-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .parameter-list ul {
+            flex: 1 1 50%;
+            list-style: none;
+            padding: 0;
+        }
+        .parameter-list li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>训练结果界面</h2>
+    <p>模型训练已完成。以下是参数结果：</p>
+
+    <div class="parameter-list">
+        <ul>
+            <li v-for="(value, key) in leftParameters" :key="key">
+                {{ key }}: {{ value }}
+            </li>
+        </ul>
+
+        <ul>
+            <li v-for="(value, key) in rightParameters" :key="key">
+                {{ key }}: {{ value }}
+            </li>
+        </ul>
+    </div>
+
+    <div class="plot-container">
+        <h3>训练指标变化图</h3>
+        <img src="http://localhost:8080/model_image/accuracy_plot.png" alt="训练指标变化图" class="plot-image">
+    </div>
+
+    <div class="result-box">
+        <h3>训练输出结果</h3>
+        <textarea v-model="trainingResult" readonly title="训练输出结果"></textarea>
+    </div>
+
+    <button @click="goBack">返回设置参数界面</button>
+    <button @click="saveResultToDatabase">保存结果到数据库</button>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                parameters: {},
+                trainingResult: '',
+                saveModel: ''
+            };
+        },
+        created() {
+            const storedTrainingResult = sessionStorage.getItem('trainingResult');
+            if (storedTrainingResult) {
+                this.trainingResult = storedTrainingResult;
+                sessionStorage.removeItem('trainingResult');
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.forEach((value, key) => {
+                if (key === 'result') {
+                    if (!this.trainingResult) {
+                        this.trainingResult = value;
+                    }
+                } else if (key === 'saveModel') {
+                    this.saveModel = value;
+                } else {
+                    this.$set(this.parameters, key, value);
+                }
+            });
+        },
+        computed: {
+            leftParameters() {
+                return Object.fromEntries(Object.entries(this.parameters).filter(([key]) => key !== 'flag').slice(0, 5));
+            },
+            rightParameters() {
+                return Object.fromEntries(Object.entries(this.parameters).filter(([key]) => key !== 'flag').slice(5));
+            }
+        },
+        methods: {
+            goBack() {
+                window.location.href = 'train.html';
+            },
+            saveResultToDatabase() {
+                const encodedSaveModel = encodeURIComponent(this.saveModel);
+                const encodedTrainingResult = encodeURIComponent(this.trainingResult);
+                axios.post('http://localhost:8080/api/training/updateTrainingResultByModelName', null, {
+                    params: {
+                        saveModel: encodedSaveModel,
+                        trainingResult: encodedTrainingResult
+                    }
+                })
+                    .then(response => {
+                        alert(response.data);
+                    })
+                    .catch(error => {
+                        console.error('保存训练结果时出错:', error);
+                        alert('保存失败，请检查控制台错误信息');
+                    });
+            }
+        }
+    });
+</script>
+</body>
+</html>

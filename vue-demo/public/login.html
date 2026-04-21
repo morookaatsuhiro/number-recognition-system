@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录界面</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f8f8;
+        }
+        #app {
+            text-align: center;
+            max-width: 350px;
+            padding: 40px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        label {
+            width: 80px;
+            text-align: right;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .captcha-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .captcha-input {
+            width: calc(60% - 20px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .captcha-image {
+            width: 100px;
+            height: 40px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            flex: 1;
+            margin: 5px;
+            padding: 4px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-login {
+            background-color: #4CAF50;
+        }
+        .btn-register {
+            background-color: #9E9E9E;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .forgot-password {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .error-text {
+            color: red;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>登录</h2>
+    <div class="input-group">
+        <label for="username">用户名:</label>
+        <input type="text" id="username" v-model="username" placeholder="请输入您的用户名">
+        <br>
+        <p v-if="usernameError" class="error-text">用户名应为8-12位的数字和大小写字母</p>
+    </div>
+    <div class="input-group">
+        <label for="password">密码:</label>
+        <input type="password" id="password" v-model="password" placeholder="请输入密码">
+        <p v-if="passwordError" class="error-text">密码应为6-16位数字、字母或下划线</p>
+    </div>
+    <div class="captcha-container">
+        <label for="captchaInput">验证码:</label>
+        <input type="text" id="captchaInput" class="captcha-input" v-model="captchaInput" placeholder="请输入验证码">
+        <img :src="captchaImage" @click="refreshCaptcha" class="captcha-image" alt="验证码">
+    </div>
+
+    <div class="button-container">
+        <button class="btn-login" @click="login">登录</button>
+        <button class="btn-register" @click="register">注册</button>
+    </div>
+    <div class="forgot-password">
+        忘记密码？ <a href="#">找回密码</a>
+    </div>
+</div>
+
+<script>
+    axios.defaults.withCredentials = true;
+
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                username: '',
+                password: '',
+                captchaInput: '',
+                captchaImage: '',
+                usernameError: false,
+                passwordError: false
+            };
+        },
+        mounted() {
+            this.refreshCaptcha();
+        },
+        watch: {
+            username(value) {
+                const usernamePattern = /^[A-Za-z0-9]{8,12}$/;
+                this.usernameError = !usernamePattern.test(value);
+            },
+            password(value) {
+                const passwordPattern = /^[A-Za-z0-9_]{6,16}$/;
+                this.passwordError = !passwordPattern.test(value);
+            }
+        },
+        methods: {
+            refreshCaptcha() {
+                axios.get('http://localhost:8080/api/captcha')
+                    .then(response => {
+                        this.captchaImage = response.data;
+                    })
+                    .catch(error => {
+                        console.error('获取验证码失败:', error);
+                    });
+            },
+            login() {
+                axios.post('http://localhost:8080/api/login', {
+                    username: this.username,
+                    password: this.password
+                }, {
+                    params: {
+                        captchaInput: this.captchaInput
+                    }
+                })
+                    .then(response => {
+                        if (response.data.success) {
+                            window.location.href = 'dashboard.html';
+                        } else {
+                            alert(response.data.error);
+                        }
+                    })
+                    .catch(error => {
+                        const message = error && error.response && error.response.data && error.response.data.error
+                            ? error.response.data.error
+                            : '登录失败，请重试';
+                        alert('登录失败: ' + message);
+                    });
+            },
+            register() {
+                window.location.href = 'register.html';
+            }
+        }
+    });
+</script>
+</body>
+</html>

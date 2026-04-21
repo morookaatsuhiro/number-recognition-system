@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手写数字识别模型管理系统</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f8f8;
+        }
+        #app {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        h2 {
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #9E9E9E;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        select {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        label {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>手写数字识别模型管理系统</h2>
+
+    <button @click="goToSettings">模型参数配置管理</button>
+
+    <div>
+        <label for="modelSelect">模型选择管理:</label>
+        <select id="modelSelect" v-model="selectedModel" @change="fetchModelInfo" title="选择模型文件">
+            <option v-for="model in modelList" :key="model" :value="model">{{ model }}</option>
+        </select>
+    </div>
+
+    <button @click="setModelName">设置选定模型</button>
+
+    <div>
+        <h3>当前使用的模型: {{ currentModel }}</h3>
+    </div>
+
+    <div class="info-box" v-if="modelInfo">
+        <h4>模型详细信息:</h4>
+        <textarea v-model="modelInfo" readonly title="模型详细信息"></textarea>
+    </div>
+</div>
+
+<script>
+    axios.defaults.withCredentials = true;
+
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                modelList: [],
+                selectedModel: '',
+                currentModel: '',
+                modelInfo: ''
+            };
+        },
+        mounted() {
+            this.fetchModelList();
+            this.getCurrentModel();
+        },
+        methods: {
+            goToSettings() {
+                window.location.href = 'train.html';
+            },
+            fetchModelList() {
+                axios.get('http://localhost:8080/api/training/model')
+                    .then(response => {
+                        this.modelList = response.data;
+                        if (this.modelList.length > 0) {
+                            this.selectedModel = this.modelList[0];
+                            this.fetchModelInfo();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取模型列表失败:', error);
+                    });
+            },
+            setModelName() {
+                axios.post('http://localhost:8080/api/training/setModel', {
+                    modelName: this.selectedModel
+                })
+                    .then(response => {
+                        alert(response.data);
+                        this.getCurrentModel();
+                    })
+                    .catch(error => {
+                        console.error('设置模型名称失败:', error);
+                    });
+            },
+            getCurrentModel() {
+                axios.get('http://localhost:8080/api/training/getCurrentModel')
+                    .then(response => {
+                        this.currentModel = response.data;
+                    })
+                    .catch(error => {
+                        console.error('获取当前模型失败:', error);
+                    });
+            },
+            fetchModelInfo() {
+                axios.get('http://localhost:8080/api/training/modelInfo', {
+                    params: {
+                        modelName: this.selectedModel
+                    }
+                })
+                    .then(response => {
+                        this.modelInfo = response.data;
+                    })
+                    .catch(error => {
+                        console.error('获取模型信息失败:', error);
+                    });
+            }
+        }
+    });
+</script>
+</body>
+</html>
