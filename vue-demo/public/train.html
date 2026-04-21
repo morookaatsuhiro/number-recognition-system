@@ -6,6 +6,7 @@
     <title>模型参数调整界面</title>
     <script src="js/axios-0.18.0.js"></script>
     <script src="js/vue.js"></script>
+    <script src="js/runtime-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -215,6 +216,7 @@
 
 <script>
     axios.defaults.withCredentials = true;
+    const runtimeConfig = window.NumberRecoRuntime;
 
     new Vue({
         el: '#app',
@@ -283,14 +285,14 @@
 
                 const parameters = Object.assign({}, this.parameters);
 
-                axios.post('http://localhost:8080/api/training/saveConfig', parameters)
+                axios.post(runtimeConfig.toApiUrl('/api/training/saveConfig'), parameters)
                     .then(response => {
                         if (!String(response.data).includes('成功')) {
                             throw new Error(response.data);
                         }
                         this.modalMessage = '正在启动训练任务...';
                         sessionStorage.setItem('trainingParams', JSON.stringify(parameters));
-                        return axios.post('http://localhost:8080/api/training/start', parameters);
+                        return axios.post(runtimeConfig.toApiUrl('/api/training/start'), parameters);
                     })
                     .then(response => {
                         this.trainingJobId = response.data.jobId;
@@ -323,7 +325,7 @@
                     return;
                 }
 
-                axios.get('http://localhost:8080/api/training/status', {
+                axios.get(runtimeConfig.toApiUrl('/api/training/status'), {
                     params: {
                         jobId: this.trainingJobId
                     }
@@ -372,7 +374,7 @@
                 }
 
                 this.modalMessage = '正在取消训练...';
-                axios.post('http://localhost:8080/api/training/cancel', null, {
+                axios.post(runtimeConfig.toApiUrl('/api/training/cancel'), null, {
                     params: {
                         jobId: this.trainingJobId
                     }

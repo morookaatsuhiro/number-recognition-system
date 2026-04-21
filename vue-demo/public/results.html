@@ -6,6 +6,7 @@
     <title>训练结果界面</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/runtime-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -111,7 +112,7 @@
 
     <div class="plot-container">
         <h3>训练指标变化图</h3>
-        <img src="http://localhost:8080/model_image/accuracy_plot.png" alt="训练指标变化图" class="plot-image">
+        <img :src="plotImageUrl" alt="训练指标变化图" class="plot-image">
     </div>
 
     <div class="result-box">
@@ -124,13 +125,16 @@
 </div>
 
 <script>
+    const runtimeConfig = window.NumberRecoRuntime;
+
     new Vue({
         el: '#app',
         data() {
             return {
                 parameters: {},
                 trainingResult: '',
-                saveModel: ''
+                saveModel: '',
+                plotImageUrl: runtimeConfig.toAssetUrl('/model_image/accuracy_plot.png')
             };
         },
         created() {
@@ -168,7 +172,7 @@
             saveResultToDatabase() {
                 const encodedSaveModel = encodeURIComponent(this.saveModel);
                 const encodedTrainingResult = encodeURIComponent(this.trainingResult);
-                axios.post('http://localhost:8080/api/training/updateTrainingResultByModelName', null, {
+                axios.post(runtimeConfig.toApiUrl('/api/training/updateTrainingResultByModelName'), null, {
                     params: {
                         saveModel: encodedSaveModel,
                         trainingResult: encodedTrainingResult

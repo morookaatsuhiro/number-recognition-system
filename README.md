@@ -86,7 +86,7 @@ number_reco/
 | 数据库地址 | `jdbc:mysql://localhost:3306/db1?...` | `demo-app/src/main/resources/application.properties` | 当前固定连本机 MySQL |
 | 数据库账号 | `root` | `application.properties` | 可自行改 |
 | 数据库密码 | `1234` | `application.properties` | 可自行改 |
-| 后端端口 | `8080` | Spring Boot 默认 | 前端接口全部写死到这个端口 |
+| 前端后端基地址默认值 | `http://localhost:8080` | `vue-demo/public/js/runtime-config.js` | 如需切换后端域名，只改这一处 |
 | 前端端口 | `5173` | `vue-demo/vite.config.js` | 开发模式端口 |
 | 默认模型名 | `model_Mnist10.pth` | `Main.java` | 会作为未选择模型时的默认值 |
 | 静态资源根目录 | `file:./img/` | `application.properties` | 后端会把 `demo-app/img/` 暴露为静态资源 |
@@ -213,6 +213,7 @@ corepack prepare pnpm@latest --activate
 
 - `http://localhost:8080/` 返回 404 是正常的，因为当前后端主要提供 API 和静态图片，不负责前端首页
 - 真正应该打开的是 `5173` 端口上的前端页面
+- 如需切换前端请求的后端地址，修改 `vue-demo/public/js/runtime-config.js` 里的 `apiBaseUrl`
 
 ## 第一次运行前必须知道的事
 

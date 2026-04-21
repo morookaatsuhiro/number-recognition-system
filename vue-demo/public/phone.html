@@ -7,6 +7,7 @@
     <title>手写数字识别系统</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/runtime-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -106,6 +107,7 @@
 
 <script>
     axios.defaults.withCredentials = true;
+    const runtimeConfig = window.NumberRecoRuntime;
 
 
 
@@ -222,8 +224,7 @@
 
 
             uploadImageToServer(formData) {
-                // axios.post('http://localhost:8080/upload', formData)
-                axios.post('http://localhost:8080/upload', formData)
+                axios.post(runtimeConfig.toApiUrl('/upload'), formData)
                     .then(response => {
                         const { imageUrl, resultText } = response.data;
 
@@ -231,7 +232,7 @@
                         document.getElementById('result-box').value = `识别结果：\n${resultText}`;
 
                         // 显示图片
-                        this.displayImage(`http://localhost:8080${imageUrl}`);
+                        this.displayImage(runtimeConfig.toAssetUrl(imageUrl));
                     })
                     .catch(error => {
                         console.error("上传图片出错:", error);

@@ -6,6 +6,7 @@
     <title>注册界面</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/runtime-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -98,6 +99,8 @@
 </div>
 
 <script>
+    const runtimeConfig = window.NumberRecoRuntime;
+
     new Vue({
         el: '#app',
         data() {
@@ -126,7 +129,7 @@
                     alert('密码和确认密码不一致，请重试！');
                     return;
                 }
-                axios.post('http://localhost:8080/api/register', {
+                axios.post(runtimeConfig.toApiUrl('/api/register'), {
                     username: this.username,
                     email: this.email,
                     password: this.password

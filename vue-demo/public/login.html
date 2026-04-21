@@ -6,6 +6,7 @@
     <title>登录界面</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/runtime-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -137,6 +138,7 @@
 
 <script>
     axios.defaults.withCredentials = true;
+    const runtimeConfig = window.NumberRecoRuntime;
 
     new Vue({
         el: '#app',
@@ -165,7 +167,7 @@
         },
         methods: {
             refreshCaptcha() {
-                axios.get('http://localhost:8080/api/captcha')
+                axios.get(runtimeConfig.toApiUrl('/api/captcha'))
                     .then(response => {
                         this.captchaImage = response.data;
                     })
@@ -174,7 +176,7 @@
                     });
             },
             login() {
-                axios.post('http://localhost:8080/api/login', {
+                axios.post(runtimeConfig.toApiUrl('/api/login'), {
                     username: this.username,
                     password: this.password
                 }, {

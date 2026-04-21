@@ -6,6 +6,7 @@
     <title>手写数字识别模型管理系统</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/runtime-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -93,6 +94,7 @@
 
 <script>
     axios.defaults.withCredentials = true;
+    const runtimeConfig = window.NumberRecoRuntime;
 
     new Vue({
         el: '#app',
@@ -113,7 +115,7 @@
                 window.location.href = 'train.html';
             },
             fetchModelList() {
-                axios.get('http://localhost:8080/api/training/model')
+                axios.get(runtimeConfig.toApiUrl('/api/training/model'))
                     .then(response => {
                         this.modelList = response.data;
                         if (this.modelList.length > 0) {
@@ -126,7 +128,7 @@
                     });
             },
             setModelName() {
-                axios.post('http://localhost:8080/api/training/setModel', {
+                axios.post(runtimeConfig.toApiUrl('/api/training/setModel'), {
                     modelName: this.selectedModel
                 })
                     .then(response => {
@@ -138,7 +140,7 @@
                     });
             },
             getCurrentModel() {
-                axios.get('http://localhost:8080/api/training/getCurrentModel')
+                axios.get(runtimeConfig.toApiUrl('/api/training/getCurrentModel'))
                     .then(response => {
                         this.currentModel = response.data;
                     })
@@ -147,7 +149,7 @@
                     });
             },
             fetchModelInfo() {
-                axios.get('http://localhost:8080/api/training/modelInfo', {
+                axios.get(runtimeConfig.toApiUrl('/api/training/modelInfo'), {
                     params: {
                         modelName: this.selectedModel
                     }
