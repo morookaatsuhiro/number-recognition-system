@@ -10,19 +10,12 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/training")
-@CrossOrigin(origins = {
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://192.168.43.252:5173",
-        "https://number-recognition-system.vercel.app"
-})
 public class TrainingController {
     private static final String CURRENT_MODEL_SESSION_KEY = "currentModel";
 
@@ -162,9 +155,7 @@ public class TrainingController {
     @GetMapping("/model")
     public ResponseEntity<List<String>> getModelList() {
         try {
-            // 设置模型存储路径
-//            Path modelDirectory = Paths.get("C:/Users/81809/IdeaProjects/tomcat-demo/tomcat-demo/tomcat-demo/demo-app/model");
-            Path modelDirectory = Paths.get("model/");
+            Path modelDirectory = NumberRecoRuntimeConfig.getModelDir();
 
             Files.createDirectories(modelDirectory);
 

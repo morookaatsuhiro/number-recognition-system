@@ -9,7 +9,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,8 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class TrainingJobService {
-    private static final Path MODEL_DIRECTORY = Paths.get("model");
-
     private final ExecutorService jobExecutor = Executors.newCachedThreadPool();
     private final ExecutorService ioExecutor = Executors.newCachedThreadPool();
     private final ConcurrentMap<String, TrainingJob> jobs = new ConcurrentHashMap<>();
@@ -84,6 +81,7 @@ public class TrainingJobService {
         Future<?> stderrFuture = null;
 
         try {
+            NumberRecoRuntimeConfig.ensureBaseDirectories();
             Process process = JavaToPy.startProcess(
                     params.get("batchSize"),
                     params.get("learningRate"),
@@ -95,7 +93,7 @@ public class TrainingJobService {
                     params.get("kernelSize"),
                     params.get("outChannel"),
                     params.get("inChannel"),
-                    "img\\default\\default.png",
+                    NumberRecoRuntimeConfig.getDefaultTrainingImagePath().toAbsolutePath().normalize().toString(),
                     currentModel,
                     job.saveModel,
                     params.get("flag")
@@ -242,7 +240,8 @@ public class TrainingJobService {
     private void cleanupCanceledArtifacts(String saveModel) {
         try {
             if (StringUtils.hasText(saveModel)) {
-                Files.deleteIfExists(MODEL_DIRECTORY.resolve(saveModel));
+                Files.deleteIfExists(NumberRecoRuntimeConfig.resolveModelPath(saveModel));
+                Files.deleteIfExists(NumberRecoRuntimeConfig.getTrainingPlotPath());
             }
         } catch (IOException ignored) {
         }

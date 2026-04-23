@@ -4,6 +4,8 @@ import os
 import cv2
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -520,6 +522,7 @@ def manual_prediction_multiple_digits_in_rows_and_columns():
     # 检查模型是否已训练并保存
     try:
         model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+        print(f"当前使用模型: {os.path.basename(model_path)}")
         print("模型加载成功，准备进行手动推测。")
     except FileNotFoundError:
         print("模型文件未找到。请确保模型已经训练并保存。")
@@ -622,7 +625,7 @@ if __name__ == '__main__':
         ax1.legend(lines, labels, loc='best')
         plt.title('Training Metrics')
         fig.tight_layout()
-        plt.savefig('img/model_image/accuracy_plot.png')  # 保存图像
+        plt.savefig(training_plot_path)  # 保存图像
         plt.close(fig)
         print(f"TRAIN_DONE|percent=100.00|model={s_m_name}", flush=True)
 #         plt.show()

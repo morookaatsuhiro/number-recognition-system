@@ -3,7 +3,6 @@ package com.example.demoapp;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,15 +18,6 @@ import java.util.UUID;
 
 @RestController
 public class SomeController {
-    private static final String TARGET_FOLDER = "img/";
-
-//    @CrossOrigin(origins = "http://localhost:5173")
-    @CrossOrigin(origins = {
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "http://192.168.43.252:5173",
-            "https://number-recognition-system.vercel.app"
-    })
     @PostMapping("/upload")
     public ResponseEntity<?> uploadImage(@RequestParam("image") MultipartFile imageFile, HttpSession session) throws InterruptedException {
 
@@ -38,10 +27,11 @@ public class SomeController {
         }
 
         try {
+            NumberRecoRuntimeConfig.ensureBaseDirectories();
             String originalFileName = imageFile.getOriginalFilename();
             String extension = getFileExtension(originalFileName);
             String storedFileName = UUID.randomUUID() + extension;
-            Path destinationFilePath = Paths.get(TARGET_FOLDER, storedFileName);
+            Path destinationFilePath = NumberRecoRuntimeConfig.resolveImagePath(storedFileName);
 
             // 确保目录存在
             Files.createDirectories(destinationFilePath.getParent());
@@ -60,7 +50,7 @@ public class SomeController {
             //return ResponseEntity.ok(analysisResult);  // 返回识别结果到前端
 
             Map<String, String> response = new HashMap<>();
-            response.put("imageUrl", "/" + storedFileName);
+            response.put("imageUrl", NumberRecoRuntimeConfig.toPublicImageUrl(destinationFilePath));
             response.put("resultText", analysisResult);
             return ResponseEntity.ok(response);
 

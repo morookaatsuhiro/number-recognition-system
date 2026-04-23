@@ -1,0 +1,9 @@
+target/
+data/
+model/
+img/
+image/
+*.log
+*.tmp
+.idea/
+.vscode/

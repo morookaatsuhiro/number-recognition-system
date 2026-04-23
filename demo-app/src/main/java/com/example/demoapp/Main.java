@@ -18,7 +18,7 @@ public class Main {
     private String flag = "use";
     private String u_model_name = DEFAULT_MODEL_NAME;
     private String s_model_name = "model_Mnist2.pth";
-    private String img_path = "img/test2.jpg";
+    private String img_path = "test2.jpg";
 
     public Main(String imgPath) {
         this.img_path = imgPath;
@@ -36,6 +36,9 @@ public class Main {
     }
 
     public String runApp() throws IOException, InterruptedException {
+        if (img_path != null) {
+            img_path = NumberRecoRuntimeConfig.resolveImagePath(img_path).toAbsolutePath().normalize().toString();
+        }
         return JavaToPy.getFile(
                 String.valueOf(batch_size),
                 String.valueOf(learning_rate),
@@ -159,7 +162,7 @@ public class Main {
     }
 
     public String runTraining() throws IOException, InterruptedException {
-        img_path = "img/default/default.png";
+        img_path = NumberRecoRuntimeConfig.getDefaultTrainingImagePath().toAbsolutePath().normalize().toString();
         return JavaToPy.getFile(
                 String.valueOf(batch_size),
                 String.valueOf(learning_rate),

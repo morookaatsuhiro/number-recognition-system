@@ -1,13 +1,22 @@
 package com.example.demoapp;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public abstract class JavaToPy {
+    private static final String PYTHON_SCRIPT_PATH = Paths.get(
+            "src", "main", "java", "com", "example", "demoapp", "cnn.py"
+    ).toString();
+
     public static String getFile(String batch_size, String learning_rate, String momentum, String EPOCH,
                                  String convstride, String conv2dpadding, String pool2dKernelSize,
                                  String conv2dKernelSize, String conv2dOutChannels, String conv2dInChannels,
@@ -50,13 +59,25 @@ public abstract class JavaToPy {
         System.out.println("s_model_name: " + saveModelName);
         System.out.println("flag: " + flag);
 
+        NumberRecoRuntimeConfig.ensureBaseDirectories();
+        Path trainingPlotPath = NumberRecoRuntimeConfig.getTrainingPlotPath();
+        if (trainingPlotPath.getParent() != null) {
+            Files.createDirectories(trainingPlotPath.getParent());
+        }
+
         ProcessBuilder processBuilder = new ProcessBuilder(
-                "C:\\Users\\67529\\number-reco\\python.exe",
-                "src/main/java/com/example/demoapp/cnn.py",
+                NumberRecoRuntimeConfig.getPythonExecutable(),
+                PYTHON_SCRIPT_PATH,
                 batch_size, learning_rate, momentum, EPOCH, convstride, conv2dpadding,
                 pool2dKernelSize, conv2dKernelSize, conv2dOutChannels, conv2dInChannels,
                 imagePath, useModelName, saveModelName, flag
         );
+
+        processBuilder.directory(new File("."));
+        Map<String, String> environment = processBuilder.environment();
+        environment.put("NUMBER_RECO_MODEL_DIR", NumberRecoRuntimeConfig.getModelDir().toAbsolutePath().normalize().toString());
+        environment.put("NUMBER_RECO_IMAGE_DIR", NumberRecoRuntimeConfig.getImageDir().toAbsolutePath().normalize().toString());
+        environment.put("NUMBER_RECO_TRAINING_PLOT_PATH", trainingPlotPath.toAbsolutePath().normalize().toString());
 
         return processBuilder.start();
     }
