@@ -1,15 +1,49 @@
 window.NUMBER_RECO_RUNTIME_CONFIG = window.NUMBER_RECO_RUNTIME_CONFIG || {
-    // 部署后只需要改这里，就能统一切换所有页面的后端地址。
-    apiBaseUrl: 'http://localhost:8080'
+    // 留空时自动判断环境：本地开发走本机 8080，线上站点走 Railway。
+    apiBaseUrl: ''
 };
 
 (function (global) {
     var STORAGE_KEY = 'numberReco.apiBaseUrl';
+    var PRODUCTION_API_BASE_URL = 'https://number-recognition-system-production.up.railway.app';
 
     function normalizeBaseUrl(value) {
         var normalized = String(value || '').trim();
         normalized = normalized.replace(/\/+$/, '');
-        return normalized || 'http://localhost:8080';
+        return normalized;
+    }
+
+    function isLocalHostname(hostname) {
+        var normalized = String(hostname || '').trim().toLowerCase();
+        return normalized === 'localhost' ||
+            normalized === '127.0.0.1' ||
+            normalized === '0.0.0.0' ||
+            normalized === '::1' ||
+            /^10\./.test(normalized) ||
+            /^192\.168\./.test(normalized) ||
+            /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalized);
+    }
+
+    function getLocalApiBaseUrl() {
+        var hostname = global.location && global.location.hostname ? global.location.hostname : 'localhost';
+        if (hostname === '0.0.0.0' || hostname === '::1') {
+            hostname = 'localhost';
+        }
+        return 'http://' + hostname + ':8080';
+    }
+
+    function getDefaultApiBaseUrl() {
+        var configured = normalizeBaseUrl(global.NUMBER_RECO_RUNTIME_CONFIG.apiBaseUrl);
+        if (configured) {
+            return configured;
+        }
+
+        var hostname = global.location && global.location.hostname ? global.location.hostname : '';
+        if (isLocalHostname(hostname)) {
+            return getLocalApiBaseUrl();
+        }
+
+        return PRODUCTION_API_BASE_URL;
     }
 
     function getStoredApiBaseUrl() {
@@ -44,15 +78,14 @@ window.NUMBER_RECO_RUNTIME_CONFIG = window.NUMBER_RECO_RUNTIME_CONFIG || {
     }
 
     function getApiBaseUrl() {
-        var configured = global.NUMBER_RECO_RUNTIME_CONFIG.apiBaseUrl;
         var stored = getStoredApiBaseUrl();
-        return normalizeBaseUrl(stored || configured);
+        return normalizeBaseUrl(stored) || getDefaultApiBaseUrl();
     }
 
     function setApiBaseUrl(value) {
         var normalized = normalizeBaseUrl(value);
         setStoredApiBaseUrl(normalized);
-        return normalized;
+        return normalized || getDefaultApiBaseUrl();
     }
 
     function resetApiBaseUrl() {
@@ -74,7 +107,7 @@ window.NUMBER_RECO_RUNTIME_CONFIG = window.NUMBER_RECO_RUNTIME_CONFIG || {
         return getApiBaseUrl() + ensureLeadingSlash(path);
     }
 
-    global.NUMBER_RECO_RUNTIME_CONFIG.apiBaseUrl = normalizeBaseUrl(global.NUMBER_RECO_RUNTIME_CONFIG.apiBaseUrl);
+    global.NUMBER_RECO_RUNTIME_CONFIG.apiBaseUrl = getDefaultApiBaseUrl();
     global.NumberRecoRuntime = {
         getApiBaseUrl: getApiBaseUrl,
         setApiBaseUrl: setApiBaseUrl,
