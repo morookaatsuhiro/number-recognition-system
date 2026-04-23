@@ -18,7 +18,8 @@ public final class NumberRecoRuntimeConfig {
             "http://localhost:5173",
             "http://127.0.0.1:5173",
             "http://192.168.43.252:5173",
-            "https://number-recognition-system.vercel.app"
+            "https://number-recognition-system.vercel.app",
+            "https://*.vercel.app"
     );
 
     private NumberRecoRuntimeConfig() {

@@ -52,9 +52,11 @@ s_m_name = sys.argv[13]
 flag = sys.argv[14]
 
 
-model_dir = os.getenv('NUMBER_RECO_MODEL_DIR', '.\\model\\')
-image_dir = os.getenv('NUMBER_RECO_IMAGE_DIR', '.\\img\\')
+model_dir = os.getenv('NUMBER_RECO_MODEL_DIR') or os.path.join('.', 'model')
+image_dir = os.getenv('NUMBER_RECO_IMAGE_DIR') or os.path.join('.', 'img')
 training_plot_path = os.getenv('NUMBER_RECO_TRAINING_PLOT_PATH')
+# 分割后的单字调试图（必须用 os.path.join；Windows 的 ".\\image\\..." 在 Linux 上 dirname 为空会报错）
+segment_image_dir = os.path.join(image_dir, 'segment_debug')
 
 
 def resolve_image_path(path):
@@ -72,6 +74,7 @@ save_train_model_path = model_path_s
 
 os.makedirs(model_dir, exist_ok=True)
 os.makedirs(image_dir, exist_ok=True)
+os.makedirs(segment_image_dir, exist_ok=True)
 if training_plot_path:
     plot_parent_dir = os.path.dirname(training_plot_path)
     if plot_parent_dir:
@@ -427,12 +430,10 @@ def segment_columns(line_image, inner_size=20, padding=4):
 
 
 def save_image(image, file_path):
-    # 获取文件夹路径
+    file_path = os.path.normpath(file_path)
     folder = os.path.dirname(file_path)
-
-    # 如果文件夹不存在，则创建文件夹
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    if folder:
+        os.makedirs(folder, exist_ok=True)
 
     # 将张量转换为二维或三维数组
     if isinstance(image, torch.Tensor):
@@ -495,8 +496,8 @@ def predict_digits_in_image(model, image_path):
 
             line_predictions.append(predicted.item())  # 保存预测结果
 
-            # 保存分割后的图像
-            file_path = f".\\image\\line_{line_idx + 1}_digit_{col_idx + 1}.png"
+            # 保存分割后的图像（路径与 Java 的 NUMBER_RECO_IMAGE_DIR 一致，且跨平台）
+            file_path = os.path.join(segment_image_dir, f"line_{line_idx + 1}_digit_{col_idx + 1}.png")
             save_image(digit_image, file_path)
 
             # # 显示分割后的图像
