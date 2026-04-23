@@ -257,7 +257,8 @@ def train(epoch):
 
         if batch_idx % 300 == 299:  # 不想要每一次都出loss，浪费时间，选择每300次出一个平均损失,和准确率
             print('[%d, %5d]: loss: %.3f , acc: %.2f %%'
-                  % (epoch + 1, batch_idx + 1, running_loss / 300, 100 * running_correct / running_total))
+                  % (epoch + 1, batch_idx + 1, running_loss / 300, 100 * running_correct / running_total),
+                  flush=True)
             running_loss = 0.0  # 这小批300的loss清零
             running_total = 0
             running_correct = 0  # 这小批300的acc清零
@@ -272,7 +273,7 @@ def train(epoch):
         # torch.save(model.state_dict(), './model_Mnist.pth')
         # torch.save(optimizer.state_dict(), './optimizer_Mnist.pth')
 
-#推测测试集
+#推试集
 def calculate_macro_f1(labels, predictions, num_classes=10):
     labels = np.array(labels)
     predictions = np.array(predictions)

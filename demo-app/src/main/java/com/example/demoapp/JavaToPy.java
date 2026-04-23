@@ -28,12 +28,9 @@ public abstract class JavaToPy {
                 imagePath, useModelName, saveModelName, flag
         );
 
+        // Merge stderr into stdout so the child process cannot deadlock when stderr fills
+        // (e.g. PyTorch logging) while we are still reading stdout line-by-line.
         String output = getProcessOutput(process.getInputStream());
-        String errorOutput = getProcessOutput(process.getErrorStream());
-
-        if (!errorOutput.isEmpty()) {
-            System.err.println("Python Error: " + errorOutput);
-        }
 
         process.waitFor();
         return output;
@@ -72,12 +69,15 @@ public abstract class JavaToPy {
                 pool2dKernelSize, conv2dKernelSize, conv2dOutChannels, conv2dInChannels,
                 imagePath, useModelName, saveModelName, flag
         );
+        processBuilder.redirectErrorStream(true);
 
         processBuilder.directory(new File("."));
         Map<String, String> environment = processBuilder.environment();
         environment.put("NUMBER_RECO_MODEL_DIR", NumberRecoRuntimeConfig.getModelDir().toAbsolutePath().normalize().toString());
         environment.put("NUMBER_RECO_IMAGE_DIR", NumberRecoRuntimeConfig.getImageDir().toAbsolutePath().normalize().toString());
         environment.put("NUMBER_RECO_TRAINING_PLOT_PATH", trainingPlotPath.toAbsolutePath().normalize().toString());
+        // Line-buffer Python stdout/stderr when piped so training logs reach Java (and the UI) promptly.
+        environment.put("PYTHONUNBUFFERED", "1");
 
         return processBuilder.start();
     }
@@ -99,7 +99,7 @@ public abstract class JavaToPy {
         try (BufferedReader bf = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             String line;
             while ((line = bf.readLine()) != null) {
-                lineConsumer.accept(line);
+                lineConsumer.accept(line.replace("\r", ""));
             }
         }
     }

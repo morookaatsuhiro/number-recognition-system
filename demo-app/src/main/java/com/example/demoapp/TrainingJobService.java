@@ -19,9 +19,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class TrainingJobService {
+    /** Matches cnn.py: "[epoch, batch]: loss: x , acc: y %" with tolerant spacing. */
+    private static final Pattern TRAIN_LOSS_PATTERN = Pattern.compile(
+            "\\[(\\d+),\\s*(\\d+)\\]:\\s*loss:\\s*([0-9.]+)\\s*,\\s*acc:\\s*([0-9.]+)\\s*%\\s*");
     private final ExecutorService jobExecutor = Executors.newCachedThreadPool();
     private final ExecutorService ioExecutor = Executors.newCachedThreadPool();
     private final ConcurrentMap<String, TrainingJob> jobs = new ConcurrentHashMap<>();
@@ -161,6 +166,10 @@ public class TrainingJobService {
     }
 
     private void handleStdout(TrainingJob job, String line) {
+        if (line == null || line.isEmpty()) {
+            return;
+        }
+        line = line.replace("\r", "");
         if (line.startsWith("TRAIN_PROGRESS|")) {
             Map<String, String> values = parseStructuredLine(line);
             synchronized (job) {
@@ -176,14 +185,24 @@ public class TrainingJobService {
 
         if (line.startsWith("TRAIN_EPOCH_SUMMARY|")) {
             Map<String, String> values = parseStructuredLine(line);
+            int epoch = parseInt(values.get("epoch"), "epoch");
+            int epochs = parseInt(values.get("epochs"), "epochs");
+            String testAcc = values.getOrDefault("testAcc", "0.00");
+            String testF1 = values.getOrDefault("testF1", "0.0000");
+            String testLoss = values.getOrDefault("testLoss", "0.0000");
             synchronized (job) {
-                int epoch = parseInt(values.get("epoch"), "epoch");
-                int epochs = parseInt(values.get("epochs"), "epochs");
-                String testAcc = values.getOrDefault("testAcc", "0.00");
                 job.message = String.format("第 %d/%d 轮完成，测试准确率 %s%%", epoch, epochs, testAcc);
                 job.currentEpoch = epoch;
                 job.totalEpochs = epochs;
             }
+            appendOutput(job, String.format(
+                    "第 %s/%s 轮完成: testAcc %s%%, F1 %s, loss %s",
+                    values.getOrDefault("epoch", "0"),
+                    values.getOrDefault("epochs", "0"),
+                    testAcc,
+                    testF1,
+                    testLoss
+            ));
             return;
         }
 
@@ -192,19 +211,23 @@ public class TrainingJobService {
                 job.progressPercent = parseDouble(parseStructuredLine(line).get("percent"), "percent");
                 job.message = "正在保存模型和训练图像...";
             }
+            appendOutput(job, "正在保存模型和训练图像...");
             return;
         }
 
         if (line.startsWith("TRAIN_DONE|")) {
+            Map<String, String> values = parseStructuredLine(line);
             synchronized (job) {
                 job.progressPercent = 100.0;
                 job.message = "训练完成";
             }
+            appendOutput(job, "训练完成，模型已保存: " + values.getOrDefault("model", job.saveModel));
             return;
         }
 
-        synchronized (job) {
-            job.output.append(line).append('\n');
+        String readableLine = toReadableTrainingLog(line);
+        if (readableLine != null) {
+            appendOutput(job, readableLine);
         }
     }
 
@@ -212,6 +235,27 @@ public class TrainingJobService {
         synchronized (job) {
             job.errorOutput.append(line).append('\n');
         }
+    }
+
+    private void appendOutput(TrainingJob job, String line) {
+        synchronized (job) {
+            job.output.append(line).append('\n');
+        }
+    }
+
+    private String toReadableTrainingLog(String line) {
+        Matcher lossMatcher = TRAIN_LOSS_PATTERN.matcher(line);
+        if (lossMatcher.matches()) {
+            return String.format(
+                    "第 %s 轮，第 %s 批: loss %s, acc %s%%",
+                    lossMatcher.group(1),
+                    lossMatcher.group(2),
+                    lossMatcher.group(3),
+                    lossMatcher.group(4)
+            );
+        }
+
+        return null;
     }
 
     private void waitForStreamReaders(Future<?> stdoutFuture, Future<?> stderrFuture) {
