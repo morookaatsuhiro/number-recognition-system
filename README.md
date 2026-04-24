@@ -1,6 +1,21 @@
-﻿# number_reco
+# number_reco
 
 基于 `Spring Boot + MySQL + PyTorch CNN + Vite` 的手写数字识别系统。
+
+## 在线演示（示例站点）
+
+以下为已部署的前端入口，便于在浏览器中直接体验（实际后端地址由 `runtime-config.js` 与部署环境决定）：
+
+| 端 | 说明 | 链接 |
+| --- | --- | --- |
+| PC 端 | 登录后进入控制台，可进行模型管理与训练等 | [login.html](https://number-recognition-system.vercel.app/login.html) |
+| 手机端 | 手写画布 / 上传图片，使用当前模型做识别 | [phone.html](https://number-recognition-system.vercel.app/phone.html) |
+
+## CNN 原理参考视频
+
+卷积神经网络（CNN）工作原理的可视化讲解可参考 bilibili 视频：[CNN 工作原理（bilibili）](https://www.bilibili.com/video/BV1gz67YrE7H/)。
+
+**说明：** 该视频**并非本仓库作者制作**，也未参与本项目的开发与上传；仅为作者在网上检索到的公开科普 / 可视化内容，转载至此 README **仅供学习参考**，版权归原视频发布者所有。若原链接失效或版权方有异议，请通过 issue 等方式联系本项目维护者以便调整或删除链接。
 
 ## 项目说明
 - `demo-app`：Spring Boot 后端，负责登录注册、验证码、模型管理、训练任务、图片上传和调用 `cnn.py`
