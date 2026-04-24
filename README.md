@@ -131,8 +131,8 @@ pnpm dev
 - `http://localhost:5173/phone.html`
 
 ## 首次运行注意
-- 仓库默认不会提交运行时目录：`demo-app/model/`、`demo-app/img/`、`demo-app/data/`
-- 如果没有任何 `.pth` 模型文件，识别功能会失败；请先训练一个模型或手动放入模型文件
+- 仓库默认不会提交运行时目录：`demo-app/img/`、`demo-app/data/`；`demo-app/model/` 中仅 **`model_Mnist10.pth`** 可随仓库提供，作为默认识别权重（与 `Main.DEFAULT_MODEL_NAME` 一致）。
+- 若你克隆后没有该文件，请先训练一次导出同名模型，或从团队/Release 取得后放入 `demo-app/model/`。
 - 首次训练会自动下载 MNIST 到 `demo-app/data/mnist/`
 - 训练页面里的 `learningRate=10` 实际表示 `0.01`，`momentum=90` 实际表示 `0.90`
 - 当前训练结果图默认文件名是 `img/model_image/accuracy_plot.png`

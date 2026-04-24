@@ -26,7 +26,9 @@ demo-app/build/
 demo-app/__pycache__/
 demo-app/**/*.pyc
 demo-app/data/
-demo-app/model/
+demo-app/model/*
+!demo-app/model/model_Mnist10.pth
+!demo-app/model/README.md
 demo-app/img/
 demo-app/image/
 
