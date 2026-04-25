@@ -34,6 +34,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --from=build /app/target/*.jar ./app.jar
 COPY src/main/java/com/example/demoapp/cnn.py ./src/main/java/com/example/demoapp/cnn.py
+# 仓库中的默认权重（与 Main.DEFAULT_MODEL_NAME 一致）；构建前请确保该文件存在
+COPY model/model_Mnist10.pth ./model/model_Mnist10.pth
 
 RUN mkdir -p /app/model /app/img/default /app/img/model_image /app/data
 

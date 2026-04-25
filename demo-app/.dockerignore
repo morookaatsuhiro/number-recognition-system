@@ -1,6 +1,6 @@
 target/
 data/
-model/
+# model/ 勿整目录忽略，否则默认权重无法 COPY 进镜像（需提交 model_Mnist10.pth）
 img/
 image/
 *.log

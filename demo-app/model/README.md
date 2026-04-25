@@ -4,6 +4,4 @@
 
 把训练导出的权重复制为上述文件名后提交到 Git，本地启动即可直接识别。
 
-若用 **Docker / Railway** 部署且希望镜像内自带该文件：在 `Dockerfile` 里 `COPY cnn.py` 下一行增加  
-`COPY model/model_Mnist10.pth ./model/model_Mnist10.pth`  
-（仅当仓库里已存在该文件时再添加，否则构建会报错。）
+部署用的 **`demo-app/Dockerfile` 已包含** `COPY model/model_Mnist10.pth`。请同时保证 **`demo-app/.dockerignore` 里没有忽略整个 `model/` 目录**，否则构建上下文里没有该文件，线上会一直报「模型文件未找到」。
