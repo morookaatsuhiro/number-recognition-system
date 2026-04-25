@@ -209,7 +209,10 @@
             </div>
 
             <button v-if="isTraining" class="btn-cancel" @click="cancelTraining">取消训练</button>
-            <button v-else @click="closeModal">关闭</button>
+            <template v-else>
+                <button v-if="showConflictActions" type="button" class="btn-cancel" @click="trainModelForce">强制结束旧任务并重新开始</button>
+                <button @click="closeModal">关闭</button>
+            </template>
         </div>
     </div>
 </div>
@@ -242,7 +245,8 @@
                 progressDetail: '',
                 trainingOutput: '',
                 isTraining: false,
-                pollTimer: null
+                pollTimer: null,
+                showConflictActions: false
             };
         },
         computed: {
@@ -273,17 +277,26 @@
         },
         methods: {
             trainModel() {
+                this.startTrainingFlow(false);
+            },
+            trainModelForce() {
+                this.showConflictActions = false;
+                this.startTrainingFlow(true);
+            },
+            startTrainingFlow(force) {
                 if (this.isTraining) {
                     return;
                 }
 
                 this.showModal = true;
+                this.showConflictActions = false;
                 this.modalMessage = '正在保存训练配置...';
                 this.trainingProgress = 0;
                 this.progressDetail = '';
                 this.trainingOutput = '';
 
                 const parameters = Object.assign({}, this.parameters);
+                const startPayload = Object.assign({}, parameters, { force: force ? 'true' : 'false' });
 
                 axios.post(runtimeConfig.toApiUrl('/api/training/saveConfig'), parameters)
                     .then(response => {
@@ -292,7 +305,7 @@
                         }
                         this.modalMessage = '正在启动训练任务...';
                         sessionStorage.setItem('trainingParams', JSON.stringify(parameters));
-                        return axios.post(runtimeConfig.toApiUrl('/api/training/start'), parameters);
+                        return axios.post(runtimeConfig.toApiUrl('/api/training/start'), startPayload);
                     })
                     .then(response => {
                         this.trainingJobId = response.data.jobId;
@@ -304,6 +317,9 @@
                     .catch(error => {
                         console.error('启动训练时出错:', error);
                         this.isTraining = false;
+                        if (error.response && error.response.status === 409) {
+                            this.showConflictActions = true;
+                        }
                         this.modalMessage = this.extractErrorMessage(error, '训练启动失败');
                     });
             },
@@ -394,18 +410,27 @@
                 if (this.isTraining) {
                     return;
                 }
+                this.showConflictActions = false;
                 this.showModal = false;
             },
             extractErrorMessage(error, fallback) {
-                if (error && error.response && error.response.data) {
-                    if (typeof error.response.data === 'string') {
-                        return error.response.data;
+                if (error && error.response) {
+                    if (error.response.status === 409) {
+                        const d = error.response.data;
+                        const body = typeof d === 'string' ? d : (d && (d.message || d.error)) || '';
+                        return (body && String(body).trim()) || '当前会话已有未结束的训练任务（HTTP 409）。可点「强制结束旧任务并重新开始」。';
                     }
-                    if (error.response.data.message) {
-                        return error.response.data.message;
-                    }
-                    if (error.response.data.error) {
-                        return error.response.data.error;
+                    if (error.response.data) {
+                        const d = error.response.data;
+                        if (typeof d === 'string') {
+                            return d;
+                        }
+                        if (d.message) {
+                            return d.message;
+                        }
+                        if (d.error) {
+                            return d.error;
+                        }
                     }
                 }
                 if (error && error.message) {

@@ -136,7 +136,10 @@ public class TrainingController {
 
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startTraining(@RequestBody Map<String, String> params, HttpSession session) {
-        return ResponseEntity.ok(trainingJobService.startJob(params, resolveCurrentModel(session), session.getId()));
+        boolean force = Boolean.parseBoolean(params.getOrDefault("force", "false"));
+        return ResponseEntity.ok(
+                trainingJobService.startJob(params, resolveCurrentModel(session), session.getId(), force)
+        );
     }
 
     @GetMapping("/status")

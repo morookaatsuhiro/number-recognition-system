@@ -32,14 +32,32 @@ public class TrainingJobService {
     private final ConcurrentMap<String, TrainingJob> jobs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> activeJobBySession = new ConcurrentHashMap<>();
 
-    public Map<String, Object> startJob(Map<String, String> params, String currentModel, String sessionId) {
+    public Map<String, Object> startJob(Map<String, String> params, String currentModel, String sessionId, boolean force) {
         String activeJobId = activeJobBySession.get(sessionId);
         if (activeJobId != null) {
             TrainingJob activeJob = jobs.get(activeJobId);
             if (activeJob != null && activeJob.isActive()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "当前已有训练任务正在运行，请先等待完成或取消。");
+                if (force) {
+                    cancelJob(activeJobId, sessionId);
+                    for (int i = 0; i < 100; i++) {
+                        TrainingJob j = jobs.get(activeJobId);
+                        if (j == null || !j.isActive()) {
+                            break;
+                        }
+                        try {
+                            Thread.sleep(50L);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                    activeJobBySession.remove(sessionId, activeJobId);
+                } else {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "当前已有训练任务正在运行，请先等待完成或取消。若已关闭页面但无法再次训练，请使用「强制重新开始」或等待约一分钟后再试。");
+                }
+            } else {
+                activeJobBySession.remove(sessionId, activeJobId);
             }
-            activeJobBySession.remove(sessionId, activeJobId);
         }
 
         String saveModel = params.get("saveModel");

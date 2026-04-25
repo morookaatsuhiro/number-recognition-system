@@ -1,6 +1,7 @@
 
 import torch
 import os
+import pickle
 import cv2
 
 import numpy as np
@@ -517,9 +518,30 @@ def predict_digits_in_image(model, image_path):
     return all_predictions
 
 
+def _model_path_looks_like_git_lfs_pointer(path) -> bool:
+    """未拉取 LFS 时，仓库里的 .pth 可能只是几行文本，PyTorch 会报 invalid load key 'v'（首字为 version）。"""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(200)
+    except OSError:
+        return False
+    return head.startswith(b"version https://git-lfs.github.com/") or (
+        b"git-lfs" in head and head.lstrip().startswith(b"version")
+    )
+
+
 # 修改手动推测函数，识别图像中每一行、每一列的所有数字
 def manual_prediction_multiple_digits_in_rows_and_columns():
     model_path = use_model_path
+
+    if _model_path_looks_like_git_lfs_pointer(model_path):
+        print(
+            "错误：当前路径下是 Git LFS 指针文本，不是真实 .pth 权重文件，无法加载。"
+            "请在能访问 LFS 的环境执行: git lfs install && git lfs pull；"
+            "或取消对该文件的 Git LFS 跟踪后重新提交真实二进制；"
+            "或把已下载的真实 model_Mnist10.pth 放入服务器 model 目录后再部署。"
+        )
+        return
 
     # 检查模型是否已训练并保存
     def _load_checkpoint(path):
@@ -541,6 +563,15 @@ def manual_prediction_multiple_digits_in_rows_and_columns():
         print("模型加载成功，准备进行手动推测。")
     except FileNotFoundError:
         print("模型文件未找到。请确保模型已经训练并保存。")
+        return
+    except pickle.UnpicklingError as e:
+        if "invalid load key" in str(e) and "'v'" in str(e):
+            print(
+                "错误：模型文件不是有效 PyTorch 二进制（常见：Git LFS 只提交了指针，线上仍是文本「version...」）。"
+                "请执行 git lfs pull 后重新部署，或不用 LFS、直接提交真实 .pth。"
+            )
+        else:
+            raise
         return
 
     # 使用新的函数对图像中的所有行和列的数字进行识别
