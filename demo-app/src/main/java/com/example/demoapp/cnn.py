@@ -522,8 +522,21 @@ def manual_prediction_multiple_digits_in_rows_and_columns():
     model_path = use_model_path
 
     # 检查模型是否已训练并保存
+    def _load_checkpoint(path):
+        # PyTorch 2.6+ 默认 weights_only=True，部分 .pth（旧训练脚本/非纯张量）会 UnpicklingError
+        # 项目内模型来自自训/自有仓库，可回退为 weights_only=False
+        try:
+            return torch.load(path, map_location=device, weights_only=True)
+        except FileNotFoundError:
+            raise
+        except TypeError:
+            # 旧版 PyTorch 无 weights_only 参数
+            return torch.load(path, map_location=device)
+        except Exception:
+            return torch.load(path, map_location=device, weights_only=False)
+
     try:
-        model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+        model.load_state_dict(_load_checkpoint(model_path))
         print(f"当前使用模型: {os.path.basename(model_path)}")
         print("模型加载成功，准备进行手动推测。")
     except FileNotFoundError:
