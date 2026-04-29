@@ -163,6 +163,8 @@ SERVER_SESSION_COOKIE_SAME_SITE=none
 
 如果你希望模型文件和上传图片在重部署后仍然保留，给 Railway 挂载 Volume，并把 `NUMBER_RECO_MODEL_DIR` 和 `NUMBER_RECO_IMAGE_DIR` 指向挂载目录下的子目录。
 
+**约 1GB 内存时（避免 OOM / 被平台警告）：** 应用由 **JVM + MySQL 连接 + 训练时 Python 子进程（PyTorch、MNIST）** 共同占用。`Dockerfile` 已设 `JAVA_OPTS`（`MaxRAMPercentage=32%` 等）和 `OMP_NUM_THREADS=1` 等；`application.properties` 已收紧 Hikari 与 Tomcat 线程。训练页**尽量把 batch size 调到 8～16**，且不要多开并发训练。若仍顶满，可在 Railway 为服务设置环境变量 `JAVA_OPTS` 将 `MaxRAMPercentage` 再降到 `28.0` 或升级实例内存。
+
 ## 已知限制
 - 当前业务页面仍在 `vue-demo/public/*.html`，还没有完全迁移到统一的 Vue SPA
 - `vue-demo/src/` 仍保留 Vite 默认示例，不是当前业务入口

@@ -65,6 +65,11 @@
             resize: none;
             background-color: #f0f0f0;
         }
+        .model-list-warning {
+            color: #c62828;
+            font-size: 14px;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -78,7 +83,7 @@
         <select id="modelSelect" v-model="selectedModel" @change="fetchModelInfo" title="选择模型文件">
             <option v-for="model in modelList" :key="model" :value="model">{{ model }}</option>
         </select>
-        <p v-if="modelList.length === 0" style="color:#c62828;font-size:14px;margin-top:8px;">
+        <p v-if="modelList.length === 0" class="model-list-warning">
             服务器上尚未发现任何 .pth 模型文件（请检查部署镜像是否包含 model 目录下的权重，或先训练保存模型）。
         </p>
     </div>
